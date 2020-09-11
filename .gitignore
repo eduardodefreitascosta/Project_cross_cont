@@ -2,3 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+Reference/
+Paper/
+Data/
+Output/
+*.yml
+*xlsx
+Main.R
