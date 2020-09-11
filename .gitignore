@@ -7,5 +7,7 @@ Paper/
 Data/
 Output/
 *.yml
+_config.yml
 *xlsx
-Main.R
+*Rproj
+Main.r

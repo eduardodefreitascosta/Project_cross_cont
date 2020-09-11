@@ -1,1 +1,5 @@
 This repository contains the code and the data to run a Bayesian model to estimate the transfer probability between knife and pork
+
+The user must to have the OpenBugs instaled tu run this model.
+
+After that it is needed to run the full code
