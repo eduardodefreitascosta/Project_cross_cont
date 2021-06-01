@@ -7,8 +7,8 @@ Paper/
 Data/
 Documents/
 Output/
+Script/regression.R
+Script/simula_final_31_3.R
 *.yml
 _config.yml
 *xlsx
-*Rproj
-Main.r

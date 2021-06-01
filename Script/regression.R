@@ -45,7 +45,7 @@ data1$total<-rep(568492,207)
 data1$neg<-data1$total-data1$cfu
 
 
-summary(glmer(cbind(data1$cfu1,data1$neg)~1+(1|id)+(1|d),data=data1,family = binomial(link = "logit"))->total)
+summary(glmer(cbind(data1$cfu1,data1$neg)~1+(1|d)+(1|id),data=data1,family = binomial(link = "logit"))->total)
 
 
 #Shrink
