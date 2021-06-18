@@ -3,7 +3,7 @@
 #Install packages
 
 #Packages to be used
-packages<-c("readxl","here","tidyverse","ggplot2","gridExtra","knitr","BRugs","coda","rjags","rgl")
+packages<-c("readxl","here","tidyverse","ggplot2","gridExtra","knitr","BRugs","coda","rjags","rgl","logitnorm")
 
 
 # Install packages not yet installed
@@ -88,37 +88,6 @@ summary(mcmc1)
 gelman.plot(mcmc1)
 lis1<-summary(mcmc1)
 
-## Result
-
-summary(1/(1+exp(-mcmc1[[1]][,1])))
-
-kable(cbind(round(lis1$statistics[,1:2],2),round(lis1$quantiles,2)))
-
-mea(-3.6,0.4)
-
-
-linhas<-list()
-linhas[[1]]<-(rbinom(100000,5*10^5,  mu1)) 
-
-for (i in 2:50){
-linhas[[i]]<-(rbinom(100000,5*10^5,  1/(1+exp(-rnorm(1,lis$statistics[1],lis$statistics[2])))  ))
-}
-
-lim1<-(mu1-((1/(1+exp(-lis1$quantiles[1,1])))))*5*10^5
-lim2<-((1/(1+exp(-lis1$quantiles[1,5])))-mu1)*5*10^5
-
-plot(density(linhas[[1]]),xlim=c(min(linhas[[1]])-lim2,max(linhas[[1]])+lim1),ylim=c(0,0.005),
-     lty=2,lwd = 4,main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T,cex=5)
-
-for (i in 2:50){
-  if( max(linhas[[i]]) < max(linhas[[1]])+lim2  &  min(linhas[[i]]) > min(linhas[[1]])-lim2  ) {
-  
-  lines((density(linhas[[i]])))}else {
-    NULL
-  }
-
-  
-}
 
 
 
@@ -189,7 +158,46 @@ summary(mcmc2)
 gelman.plot(mcmc2)
 lis2<-summary(mcmc2)
 
-## Result
+#########
+# Plots #
+#########
+
+
+par(mfrow=c(2,1))
+
+summary(1/(1+exp(-mcmc1[[1]][,1])))
+
+kable(cbind(round(lis1$statistics[,1:2],2),round(lis1$quantiles,2)))
+
+mea(-3.6,0.4)
+
+tot<-10^4
+
+linhas<-list()
+linhas[[1]]<-(rbinom(100000,tot,  mu1)) 
+
+for (i in 2:100){
+  linhas[[i]]<-(rbinom(100000,tot,  1/(1+exp(-rnorm(1,lis$statistics[1],lis$statistics[2])))  ))
+}
+
+lim1<-(mu1-((1/(1+exp(-lis1$quantiles[1,1])))))*tot
+lim2<-((1/(1+exp(-lis1$quantiles[1,5])))-mu1)*tot
+
+par(mar = c(4, 2, 2, 2))
+plot(density(linhas[[1]]),xlim=c(min(linhas[[1]])-lim2,max(linhas[[1]])+lim1),ylim=c(0,0.03),
+     main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T)
+mtext('A', side=3, line=1, at=150)
+
+for (i in 2:100){
+  if( max(linhas[[i]]) < max(linhas[[1]])+lim2  &  min(linhas[[i]]) > min(linhas[[1]])-lim2  ) {
+    
+    lines((density(linhas[[i]])))}else {
+      NULL
+    }
+  
+  
+}
+
 
 mu2<-1/(1+exp(-lis2$statistics[1]))
 ci2<-c(1/(1+exp(-lis2$quantiles[1,1])),1/(1+exp(-lis2$quantiles[1,5])))
@@ -199,19 +207,25 @@ kable(cbind(round(lis2$statistics[,1:2],2),round(lis2$quantiles,2)))
 
 
 
+tot<-10^4
+
 linhas2<-list()
-for (i in 1:500){
-  linhas2[[i]]<-(rbinom(100000,9411765,  1/(1+exp(-rnorm(1,lis2$statistics[1],lis2$statistics[2])))  ))
+linhas2[[1]]<-(rbinom(100000,tot,  mu2)) 
+
+for (i in 2:100){
+  linhas2[[i]]<-(rbinom(100000,tot,  1/(1+exp(-rnorm(1,lis2$statistics[1],lis2$statistics[2])))  ))
 }
 
-lim1<-600
-lim2<-900
+lim3<-(mu2-((1/(1+exp(-lis2$quantiles[1,1])))))*tot
+lim4<-((1/(1+exp(-lis2$quantiles[1,5])))-mu2)*tot
 
-plot(density(linhas2[[1]]),xlim=c(min(linhas2[[1]])-lim1,max(linhas2[[1]])+lim1),
-     lty=2,lwd = 4,main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T,cex=5)
+par(mar = c(4, 2, 2, 2))
+plot(density(linhas2[[1]]),xlim=c(min(linhas2[[1]])-lim3,max(linhas2[[1]])+lim4),ylim=c(0,0.1)
+     ,main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T)
+mtext('B', side=3, line=1, at=10)
 
-for (i in 2:500){
-  if( max(linhas2[[i]]) < max(linhas2[[1]])+lim2  &  min(linhas2[[i]]) > min(linhas2[[1]])-lim2  ) {
+for (i in 2:100){
+  if( max(linhas2[[i]]) < max(linhas2[[1]])+lim3  &  min(linhas2[[i]]) > min(linhas2[[1]])-lim4  ) {
     
     lines((density(linhas2[[i]])))}else {
       NULL
@@ -228,21 +242,35 @@ for (i in 2:500){
 x<-seq(-5,5,len=100)
 y<-seq(0,5,len=100)
 
-z <- outer(x,y, function(x,y) exp(x+y^2/2)/(1+exp(x+y^2/2)))
-persp(x,y,z)
 
-persp3d(x,y,z,theta = 30, phi = 30, expand = 0.5,xlab = expression(italic(mu)), ylab = expression(italic(sigma)), 
+z1<-matrix(NA,ncol=100,nrow=100)
+z2<-matrix(NA,ncol=100,nrow=100)
+
+for(j in 1:100){
+ for(i in 1:100){
+   
+  z1[i,j]<-momentsLogitnorm(x[i], y[j])[1]
+  z2[i,j]<-momentsLogitnorm(x[i], y[j])[2]
+ 
+  }
+}
+
+
+par(mfrow=c(1,2))
+persp(x,y,z1)
+persp(x,y,z2)
+
+
+persp3d(x,y,z1,col="gray",xlab = expression(italic(mu)), ylab = expression(italic(sigma)), 
         zlab = expression(paste("E(",italic(theta),")")))
 
-# Para binomial
 
-#x1<-seq(-5,5,len=100)
-#y1<-seq(0,5,len=100)
 
-#z1 <- outer(x1,y1, function(x1,y1) sqrt(exp(x1+y1^2/2)/(1+exp(x1+y1^2/2))*(1-(exp(x1+y1^2/2)/(1+exp(x1+y1^2/2))))) )
 
-#persp(x1,y1,z1)
+persp3d(x,y,z2,col="gray",xlab = expression(italic(mu)), ylab = expression(italic(sigma)), 
+        zlab = expression(paste("Var(",italic(theta),")")))
 
-#persp3d(x,y,z1,col="black")
+
+
 
 
