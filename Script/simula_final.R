@@ -1,23 +1,37 @@
 
-#Installing and loading Packages
-#Install packages
+#header #################################################################################
+#'simula_final.R'
 
-#Packages to be used
-packages<-c("readxl","here","tidyverse","ggplot2","gridExtra","knitr","BRugs","coda","rjags","rgl","logitnorm")
+#Title: Salmonella transfer
+#Project ID: pid
+#Client: UFRGS
+#Author: <Eduardo> <Costa>, Wageningen Bioveterinary Research
+
+#Description: This is a paper describying the a Bayesian model to estimate the *Salmonella* sp. transfer probability between knife and pork in a household scenario.
+
+#Start date: date
+#Last Update: {6:date}
+
+#R version: r.version
+#Scriptversion: version
+
+#Dependencies
+#<-Downstream none
+#->Upstream Main.R
+
+#Input:
+#- None
+
+#Output:
+#- pork_to_knife.txt; knife_to_pork.txt
+
+#Peer reviewer(s)
+
+#Please ensure directories are relative. Please comment code sufficiently.
+
+#Script start#############################################################################
 
 
-# Install packages not yet installed
-installed_packages <- packages %in% rownames(installed.packages())
-if (any(installed_packages == FALSE)) {
-  install.packages(packages[!installed_packages])
-}
-
-
-# Packages loading
-invisible(lapply(packages, library, character.only = TRUE))
-
-#Mean function
-mea<-function(m,s){exp(m+s^2/2)/(1+exp(m+s^2/2))}
 
 ##########################
 # Modeling knife to pork #
@@ -30,6 +44,14 @@ rep2.1<-c(20,16,14,20,17,20,18,8,12,46,22,10,16,4,12,4,2,8,36,16,21,12,13,3,3,2,
 rep3.1<-c(18,16,16,16,16,16,18,8,8,41,24,12,17,6,14,2,2,7,34,16,18,12,15,3,3,3,3,2,2,3,2,2,4,3,2,2,2,3,1,0,2,11,2,2,2,3,1,1,1,1,0,1,2,0,0,0,0,0,0,0,0,0,0,0,9,0,0,1,0)
 Y1 = array(cbind(rep1.1, rep2.1, rep3.1),dim=c(23,3,3))
 
+#Knife dataset
+rep1.3<-c(82,127,117,133,58,74,62,70,107,129,127,96,144,127,124,126,137,126,128,122,114,6,11,15,13,14,6,12,12,18,10,12,10,16,12,16,13,11,10,5,5,7)
+rep1.3<-c(70,164,137,147,70,105,39,62,114,139,122,98,136,129,136,122,139,128,129,120,118,13,18,12,21,5,9,5,10,12,9,19,14,12,16,13,14,11,8,8,5,8)
+rep1.3<-c(64,144,124,168,57,121,54,63,100,140,125,124,128,137,141,118,128,131,126,118,121,9,11,17,15,13,13,10,7,10,12,16,12,13,14,15,14,6,7,6,6,12)
+Y3 = array(cbind(rep1.3, rep1.3, rep1.3),dim=c(21,2,3))
+
+
+
 #Model
 
 cat(
@@ -39,37 +61,38 @@ cat(
     for(j in 1:3){
       for(k in 1:3){
         Y[i,j,k] ~ dpois(D[i,j])
+        
       }
+      
       D[i,j]~dgamma(A[i],l[i,j])
+      
       l[i,j]<-(100/d[j])+0.05
+      
     }
-    A[i]<-5+N[i]
-    N[i]~dbin(TR[i],tot)
     
-    logit(TR[i]) <- beta0[i] 
-    beta0[i] ~ dnorm(mu, tau)
   
-  }
+    A[i]<-5+N[i]
+    N[i]~dbin(TR,tot)
+  
+   }
+    TR~dbeta(a,b)
+    
+    a~dunif(0,1000)
+    b~dunif(0,1000)
+   
   tot~dpois(568492)
-  
-  mu~dnorm(0, 1.0E-6)
-  
-  tau~dgamma(0.001,0.001)
-  
-  sigma <-1/(tau)
-  
   
   }' , file={f1<-tempfile()} )
 
 
 
 # Defining burn-in, number of simulations, thin and parameters to be shown
-burn = 10000;nsim = 2000000;nthin = 100
+burn = 100000;nsim = 2000000;nthin = 1000
 
 # Defining the data as a list
-dadosjags =  list(d=c(10^(-1), 10^(-2),10^(-3)), Y=Y1 )
+dadosjags =  list(d=c(10^(-1), 10^(-2),10^(-3)), Y=Y1,d2=c(10^(-1), 10^(-2)),W=Y3)
 
-parms = c("mu", "sigma")
+parms = c("TR","a","b")
 
 # initializing for adoptation
 m1 <- jags.model(f1, dadosjags,  n.chains=3,n.adapt=1000)
@@ -86,10 +109,9 @@ effectiveSize(mcmc1)
 autocorr.diag(mcmc1)
 summary(mcmc1)
 gelman.plot(mcmc1)
-lis1<-summary(mcmc1)
 
 
-
+capture.output(summary(mcmc1), file = here("Output","knife_to_pork.txt"))
 
 ##########################
 # Modeling pork to knife #
@@ -116,30 +138,28 @@ cat(
       l[i,j]<-(50/d[j])+0.05
     }
     A[i]<-5+N[i]
-    N[i]~dbin(TR[i],tot)
+    N[i]~dbin(TR,tot)
     
-    logit(TR[i]) <- beta0[i] 
-    beta0[i] ~ dnorm(mu, tau)
+    
+
   }
+    TR ~ dbeta(a, b)  
   tot~dpois(9411765)
-  
-  mu~dnorm(0, 1.0E-6)
-  
-  tau~dgamma(0.001,0.001)
-  
-  sigma <-1/(tau)
-  
+  a~dunif(0,1000)
+    b~dunif(0,1000)
   
   }' , file={f2<-tempfile()} )
 
 
+
+
 # Defining burn-in, number of simulations, thin and parameters to be shown
-burn = 10000;nsim = 2000000;nthin = 200
+burn = 100000;nsim = 2000000;nthin = 1000
 
 # Defining the data as a list
 dadosjags2 =  list(d=c(1*10^(-1), 1*10^(-2), 1*10^(-3)), Y=Y2)
 
-parms = c("mu", "sigma")
+parms = c("TR", "a","b")
 
 # initializing for adoptation
 m2 <- jags.model(f2, dadosjags2,  n.chains=3,n.adapt=1000)
@@ -156,121 +176,54 @@ effectiveSize(mcmc2)
 autocorr.diag(mcmc2)
 summary(mcmc2)
 gelman.plot(mcmc2)
-lis2<-summary(mcmc2)
 
-#########
-# Plots #
-#########
+capture.output(summary(mcmc2), file = here("Output","pork_to_knife.txt"))
 
 
-par(mfrow=c(2,1))
-
-summary(1/(1+exp(-mcmc1[[1]][,1])))
-
-kable(cbind(round(lis1$statistics[,1:2],2),round(lis1$quantiles,2)))
-
-mea(-3.6,0.4)
-
-tot<-10^4
-
-linhas<-list()
-linhas[[1]]<-(rbinom(100000,tot,  mu1)) 
-
-for (i in 2:100){
-  linhas[[i]]<-(rbinom(100000,tot,  1/(1+exp(-rnorm(1,lis$statistics[1],lis$statistics[2])))  ))
-}
-
-lim1<-(mu1-((1/(1+exp(-lis1$quantiles[1,1])))))*tot
-lim2<-((1/(1+exp(-lis1$quantiles[1,5])))-mu1)*tot
-
-par(mar = c(4, 2, 2, 2))
-plot(density(linhas[[1]]),xlim=c(min(linhas[[1]])-lim2,max(linhas[[1]])+lim1),ylim=c(0,0.03),
-     main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T)
-mtext('A', side=3, line=1, at=150)
-
-for (i in 2:100){
-  if( max(linhas[[i]]) < max(linhas[[1]])+lim2  &  min(linhas[[i]]) > min(linhas[[1]])-lim2  ) {
-    
-    lines((density(linhas[[i]])))}else {
-      NULL
-    }
-  
-  
-}
-
-
-mu2<-1/(1+exp(-lis2$statistics[1]))
-ci2<-c(1/(1+exp(-lis2$quantiles[1,1])),1/(1+exp(-lis2$quantiles[1,5])))
-
-kable(cbind(round(lis2$statistics[,1:2],2),round(lis2$quantiles,2)))
-
-
-
-
-tot<-10^4
-
-linhas2<-list()
-linhas2[[1]]<-(rbinom(100000,tot,  mu2)) 
-
-for (i in 2:100){
-  linhas2[[i]]<-(rbinom(100000,tot,  1/(1+exp(-rnorm(1,lis2$statistics[1],lis2$statistics[2])))  ))
-}
-
-lim3<-(mu2-((1/(1+exp(-lis2$quantiles[1,1])))))*tot
-lim4<-((1/(1+exp(-lis2$quantiles[1,5])))-mu2)*tot
-
-par(mar = c(4, 2, 2, 2))
-plot(density(linhas2[[1]]),xlim=c(min(linhas2[[1]])-lim3,max(linhas2[[1]])+lim4),ylim=c(0,0.1)
-     ,main="",xlab="Number of transfered cells",ylab="",yaxt='n', ann=T)
-mtext('B', side=3, line=1, at=10)
-
-for (i in 2:100){
-  if( max(linhas2[[i]]) < max(linhas2[[1]])+lim3  &  min(linhas2[[i]]) > min(linhas2[[1]])-lim4  ) {
-    
-    lines((density(linhas2[[i]])))}else {
-      NULL
-    }
-  
-  
-}
-
-
-
-## Theoretical
-
-# Valor esperado para p
-x<-seq(-5,5,len=100)
-y<-seq(0,5,len=100)
-
-
-z1<-matrix(NA,ncol=100,nrow=100)
-z2<-matrix(NA,ncol=100,nrow=100)
-
-for(j in 1:100){
- for(i in 1:100){
-   
-  z1[i,j]<-momentsLogitnorm(x[i], y[j])[1]
-  z2[i,j]<-momentsLogitnorm(x[i], y[j])[2]
- 
-  }
-}
-
+###############################################
+# Descriptive classical approach 1st dilution #
+###############################################
 
 par(mfrow=c(1,2))
-persp(x,y,z1)
-persp(x,y,z2)
+
+# Knife to meat
+freq<-apply(matrix(apply(Y1[1:23,1,],1,mean)/(c(rep(0.1,23))/100),nrow=23,ncol=1),1,mean ) /568492.06
 
 
-persp3d(x,y,z1,col="gray",xlab = expression(italic(mu)), ylab = expression(italic(sigma)), 
-        zlab = expression(paste("E(",italic(theta),")")))
+# Meat to knife
+freq2<-apply(matrix(apply(Y2[1:22,1,],1,mean)/(c(rep(0.1,22))/50),nrow=22,ncol=1),1,mean ) /9411765
 
 
+# Total dataset descriptive
+teste<-cbind.data.frame(freq=c(freq,freq2),label=c(rep("K-M",length(freq)),rep("M-K",length(freq2))) )
+describeBy(teste$freq,group=teste$label,digits = 5,mat=T)
 
 
-persp3d(x,y,z2,col="gray",xlab = expression(italic(mu)), ylab = expression(italic(sigma)), 
-        zlab = expression(paste("Var(",italic(theta),")")))
+# Layout to split the screen
 
 
+tiff(here("Figures","Fig_11.tiff"), units="in", width=6, height=5, res=300)
+
+par(mar=c(0.1, 3, 1.1, 2.1))
+layout(mat = (matrix(c(1,2,3,4), byrow=TRUE)),  height = c(1.5,8,1.5,8))
+
+# Draw the boxplot and the histogram 
+par(mar=c(0, 2, 1.1, 2.1))
+boxplot(freq , horizontal=TRUE , ylim=c(0,max(freq)+0.02), xaxt="n" , frame=F)
+par(mar=c(4, 2, 1.1, 2.1))
+hist(freq , breaks=10  , border=T , main="", yaxt="n", xlab="Transfer probability", xlim=c(0,max(freq)+0.02),cex.lab=1.5, 
+     cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+text(0,10,"A",cex=2)
+abline(v=quantile(freq,c(0.025,0.975)))
+
+# Draw the boxplot and the histogram 
+par(mar=c(0.1, 2, 1.1, 2.1))
+boxplot(freq2 , horizontal=TRUE , ylim=c(0,max(freq2)+0.002), xaxt="n" , frame=F)
+par(mar=c(4.5, 2, 1.1, 2.1))
+hist(freq2 , breaks=10  , border=T , main="", yaxt="n", xlab="Transfer probability", xlim=c(0,max(freq2)+0.002)
+     ,cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+text(0,3.8,"B",cex=2)
+abline(v=quantile(freq2,c(0.025,0.975)))
 
 
-
+dev.off()
