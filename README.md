@@ -7,7 +7,7 @@
 # This is a paper describying the a Bayesian model to estimate the *Salmonella* sp. transfer probability between knife and pork in a household scenario.
 
 
-:microscope: :microbe: :chart_with_upwards_trend:
+:knife: :meat: :microbe: :chart_with_upwards_trend:
 
 ## The paper is available online: https://www.sciencedirect.com/science/article/pii/S2352352221000190
 
