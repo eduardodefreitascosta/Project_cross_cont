@@ -1,6 +1,6 @@
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.1016/j.mran.2021.100177.svg)](https://www.sciencedirect.com/science/article/pii/S2352352221000190)
+[![DOI](https://zenodo.org/badge/DOI/10.1016/j.mran.2022.100203.svg)](https://www.sciencedirect.com/science/article/pii/S2352352222000032?via%3Dihub)
 
 
 
@@ -9,7 +9,7 @@
 
 :knife: :cut_of_meat: :microbe: :chart_with_upwards_trend:
 
-## The paper is available online: https://www.sciencedirect.com/science/article/pii/S2352352221000190
+## The paper is available online: https://www.sciencedirect.com/science/article/pii/S2352352222000032?via%3Dihub
 
 
 
